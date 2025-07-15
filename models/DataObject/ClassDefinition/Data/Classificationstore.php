@@ -151,7 +151,6 @@ class Classificationstore extends Data implements CustomResourcePersistingInterf
         if (!$data instanceof DataObject\Classificationstore) {
             return [];
         }
-
         $fieldData = [];
         $metaData = [];
         $result = $this->doGetDataForEditMode($data, $object, $fieldData, $metaData, 1);
@@ -206,6 +205,7 @@ class Classificationstore extends Data implements CustomResourcePersistingInterf
      */
     private function doGetDataForEditMode(DataObject\Classificationstore $data, Concrete $object, array &$fieldData, array &$metaData, int $level = 1): array
     {
+        $isLocalizedClassificationStore = $this->localized;
         $class = $object->getClass();
         $inheritanceAllowed = $class->getAllowInherit();
         $inherited = false;
@@ -228,6 +228,28 @@ class Classificationstore extends Data implements CustomResourcePersistingInterf
                             $fieldData[$language][$groupId][$keyId] = $fdata;
                             if (!$fd->isEmpty($fdata)) {
                                 $metaData[$language][$groupId][$keyId] = ['inherited' => $level > 1, 'objectid' => $object->getId()];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if ($isLocalizedClassificationStore) {
+            // if the value is localizable, we must search for the fallback langguage value
+            $validLanguages = Tool::getValidLanguages();
+            $defaultLanguage = Tool::getDefaultLanguage();
+            array_unshift($validLanguages, 'default');
+            array_unshift($validLanguages, $defaultLanguage);
+            if (array_key_exists($defaultLanguage, $fieldData)) {
+                // if the default language is set, we can use it as a fallback for missing key values
+                foreach($fieldData[$defaultLanguage] as $groupId => $grpData){
+                    foreach($grpData as $keyId => $value){
+                        foreach($validLanguages as $language){
+                            if (!isset($fieldData[$language][$groupId][$keyId]) || $fd->isEmpty($fieldData[$language][$groupId][$keyId])) {
+                                $fieldData[$language][$groupId][$keyId] = $value;
+                                if(!isset($metaData[$language][$groupId][$keyId])){
+                                    $metaData[$language][$groupId][$keyId] = ['inherited' => true, 'objectid' => $object->getId()];
+                                }
                             }
                         }
                     }

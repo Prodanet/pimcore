@@ -202,6 +202,14 @@ class Wysiwyg extends Data implements ResourcePersistenceAwareInterface, QueryRe
         }
     }
 
+    public function isEmpty(mixed $data): bool
+    {
+        $value = (string) $data;
+        $value = strip_tags($value, '<a><img>'); // allow links and images
+        $value = trim($value);
+        return strlen($value) < 1;
+    }
+
     public function preGetData(mixed $container, array $params = []): ?string
     {
         $data = '';

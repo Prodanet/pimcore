@@ -246,24 +246,28 @@ class Classificationstore extends Data implements CustomResourcePersistingInterf
                 // if the default key is set, we can use it as a fallback for missing key values
                 foreach($fieldData['default'] as $groupId => $grpData){
                     foreach($grpData as $keyId => $value){
-                        $objectId = $object->getId();
-                        if (!isset($fieldData[$defaultLanguage][$groupId][$keyId]) || $fd->isEmpty($fieldData[$defaultLanguage][$groupId][$keyId])) {
-                            $fieldData[$defaultLanguage][$groupId][$keyId] = $value;
-                            if(isset($metaData['default'][$groupId][$keyId]) && $metaData['default'][$groupId][$keyId]['inherited']){
-                                // if the value is inherited, we don't want to override it
-                                $objectId = $metaData['default'][$groupId][$keyId]['objectid'];
-                            }
-                            $metaData[$defaultLanguage][$groupId][$keyId] = ['inherited' => true, 'objectid' => $objectId, 'fromLanguage' => 'default'];
-                        } else {
-                            // if the value is already set, we want to override it from default key when it is inherited from parent
-                            if (isset($metaData[$defaultLanguage][$groupId][$keyId]) && $metaData[$defaultLanguage][$groupId][$keyId]['inherited']) {
-                                // if the value is inherited, we don't want to override it
+                        $keyConfig = DataObject\Classificationstore\DefinitionCache::get($keyId);
+                        if ($keyConfig->getEnabled()) {
+                            $fd = DataObject\Classificationstore\Service::getFieldDefinitionFromKeyConfig($keyConfig);
+                            $objectId = $object->getId();
+                            if (!isset($fieldData[$defaultLanguage][$groupId][$keyId]) || $fd->isEmpty($fieldData[$defaultLanguage][$groupId][$keyId])) {
                                 $fieldData[$defaultLanguage][$groupId][$keyId] = $value;
                                 if(isset($metaData['default'][$groupId][$keyId]) && $metaData['default'][$groupId][$keyId]['inherited']){
                                     // if the value is inherited, we don't want to override it
                                     $objectId = $metaData['default'][$groupId][$keyId]['objectid'];
                                 }
-                                $metaData[$defaultLanguage][$groupId][$keyId] = ['inherited' => true, 'objectid' => $objectId, 'fromLanguage' => 'default'];
+                                $metaData[$defaultLanguage][$groupId][$keyId] = ['inherited' => true, 'objectid' => $objectId, 'fromLanguage' => 'default', 'isDefault' => true, 'level' => $level];
+                            } else {
+                                // if the value is already set, we want to override it from default key when it is inherited from parent
+                                if (isset($metaData[$defaultLanguage][$groupId][$keyId]) && $metaData[$defaultLanguage][$groupId][$keyId]['inherited']) {
+                                    // if the value is inherited, we don't want to override it
+                                    $fieldData[$defaultLanguage][$groupId][$keyId] = $value;
+                                    if(isset($metaData['default'][$groupId][$keyId]) && $metaData['default'][$groupId][$keyId]['inherited']){
+                                        // if the value is inherited, we don't want to override it
+                                        $objectId = $metaData['default'][$groupId][$keyId]['objectid'];
+                                    }
+                                    $metaData[$defaultLanguage][$groupId][$keyId] = ['inherited' => true, 'objectid' => $objectId, 'fromLanguage' => 'default', 'isDefault' => true, 'level' => $level];
+                                }
                             }
                         }
                     }
@@ -276,23 +280,27 @@ class Classificationstore extends Data implements CustomResourcePersistingInterf
                     foreach($grpData as $keyId => $value){
                         foreach($validLanguages as $language){
                             $objectId = $object->getId();
-                            if (!isset($fieldData[$language][$groupId][$keyId]) || $fd->isEmpty($fieldData[$language][$groupId][$keyId])) {
-                                $fieldData[$language][$groupId][$keyId] = $value;
-                                if(isset($metaData[$defaultLanguage][$groupId][$keyId]) && $metaData[$defaultLanguage][$groupId][$keyId]['inherited']){
-                                    // if the value is inherited, we don't want to override it
-                                    $objectId = $metaData[$defaultLanguage][$groupId][$keyId]['objectid'];
-                                }
-                                $metaData[$language][$groupId][$keyId] = ['inherited' => true, 'objectid' => $objectId, 'fromLanguage' => $defaultLanguage];
-                            } else {
-                                // if the value is already set, we want to override it from default language when it is inherited from parent
-                                if (isset($metaData[$language][$groupId][$keyId]) && $metaData[$language][$groupId][$keyId]['inherited']) {
-                                    // if the value is inherited, we don't want to override it
-                                    $fieldData[$defaultLanguage][$groupId][$keyId] = $value;
-                                    if(isset($metaData['default'][$groupId][$keyId]) && $metaData['default'][$groupId][$keyId]['inherited']){
+                            $keyConfig = DataObject\Classificationstore\DefinitionCache::get($keyId);
+                            if ($keyConfig->getEnabled()) {
+                                $fd = DataObject\Classificationstore\Service::getFieldDefinitionFromKeyConfig($keyConfig);
+                                if (!isset($fieldData[$language][$groupId][$keyId]) || $fd->isEmpty($fieldData[$language][$groupId][$keyId])) {
+                                    $fieldData[$language][$groupId][$keyId] = $value;
+                                    if(isset($metaData[$defaultLanguage][$groupId][$keyId]) && $metaData[$defaultLanguage][$groupId][$keyId]['inherited']){
                                         // if the value is inherited, we don't want to override it
-                                        $objectId = $metaData['default'][$groupId][$keyId]['objectid'];
+                                        $objectId = $metaData[$defaultLanguage][$groupId][$keyId]['objectid'];
                                     }
-                                    $metaData[$defaultLanguage][$groupId][$keyId] = ['inherited' => true, 'objectid' => $objectId, 'fromLanguage' => 'default'];
+                                    $metaData[$language][$groupId][$keyId] = ['inherited' => true, 'objectid' => $objectId, 'fromLanguage' => $defaultLanguage, 'isDefault' => false, 'level' => $level, 'isDefaultLanguage' => true];
+                                } else {
+                                    // if the value is already set, we want to override it from default language when it is inherited from parent
+                                    if (isset($metaData[$language][$groupId][$keyId]) && $metaData[$language][$groupId][$keyId]['inherited']) {
+                                        // if the value is inherited, we don't want to override it
+                                        $fieldData[$defaultLanguage][$groupId][$keyId] = $value;
+                                        if(isset($metaData['default'][$groupId][$keyId]) && $metaData['default'][$groupId][$keyId]['inherited']){
+                                            // if the value is inherited, we don't want to override it
+                                            $objectId = $metaData['default'][$groupId][$keyId]['objectid'];
+                                        }
+                                        $metaData[$defaultLanguage][$groupId][$keyId] = ['inherited' => true, 'objectid' => $objectId, 'fromLanguage' => 'default', 'isDefault' => false, 'level' => $level, 'isDefaultLanguage' => true];
+                                    }
                                 }
                             }
                         }
